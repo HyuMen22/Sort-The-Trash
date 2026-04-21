@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sort The Trash - Mobile Responsive</title>
+    <title>Sort The Trash</title>
     <style>
         * {
             margin: 0;
@@ -11,20 +11,19 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none; /* Mencegah scroll saat main game */
+            touch-action: none; 
         }
 
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000; /* Hitam pekat untuk border saat tidak pas 16:9 */
+            background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Container Full Screen */
         #gameContainer {
             position: relative;
             width: 100vw;
@@ -37,29 +36,21 @@
 
         canvas {
             background-color: #000;
-            /* Menyesuaikan layar secara dinamis */
             width: 100%;
             height: 100%;
             max-width: 100vw;
             max-height: 100vh;
-            object-fit: contain; /* Menjaga rasio 16:9 tetap sempurna */
+            object-fit: contain;
             display: block;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* Optimalisasi Fullscreen berdasarkan Rasio Layar */
         @media (min-aspect-ratio: 16/9) {
-            canvas {
-                width: auto;
-                height: 100vh;
-            }
+            canvas { width: auto; height: 100vh; }
         }
 
         @media (max-aspect-ratio: 16/9) {
-            canvas {
-                width: 100vw;
-                height: auto;
-            }
+            canvas { width: 100vw; height: auto; }
         }
 
         #bgVideo {
@@ -79,7 +70,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const video = document.getElementById('bgVideo');
 
-// --- VARIABEL ANIMASI FASE ---
 let phaseOverlay = {
     active: false,
     text: "",
@@ -195,7 +185,6 @@ let gameObjects = [];
 let screenShakeCounter = 0;
 let gameTimer = 80; 
 let timerInterval = null;
-let heartbeatPhase = 0; 
 
 const menuConfig = {
     logo: { x: 430, y: 50, w: 500, h: 240 },
@@ -245,7 +234,6 @@ function setupLevel(lvlNumber) {
     dragSubject = null;
     clearInterval(timerInterval);
     gameTimer = (lvlNumber === 3) ? 80 : 90;
-    heartbeatPhase = 0;
     video.pause();
 
     if (lvlNumber === 1) {
@@ -413,14 +401,12 @@ function mainLoop() {
     requestAnimationFrame(mainLoop);
 }
 
-// --- LOGIKA RESPONSIVE & POSISI INPUT (MOUSE/JARI) ---
-let lastInputPos = { x: 0, y: 0 };
 
 function calculateInputPos(e) {
     const rect = canvas.getBoundingClientRect();
-    
-    // Deteksi apakah input dari touch (Mobile) atau mouse (Desktop)
     let clientX, clientY;
+
+    // Deteksi koordinat dari touch atau mouse secara spesifik
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -431,11 +417,10 @@ function calculateInputPos(e) {
         clientX = e.clientX;
         clientY = e.clientY;
     }
-    
-    // Skala dinamis berdasarkan ukuran tampilan canvas di layar
+
     const scaleX = 1280 / rect.width;
     const scaleY = 720 / rect.height;
-    
+
     return {
         x: (clientX - rect.left) * scaleX,
         y: (clientY - rect.top) * scaleY
@@ -443,13 +428,13 @@ function calculateInputPos(e) {
 }
 
 function handleInputDown(e) {
-    const pos = calculateInputPos(e);
-    lastInputPos = pos; // Simpan posisi awal sentuhan
-
+    
     if (currentState === "MAIN_MENU" || currentState === "LOADING") {
-        if (assets.sounds['lobby'] && assets.sounds['lobby'].paused && !phaseOverlay.active) handleBGM('lobby');
-        video.play().catch(e => {});
+        video.play().catch(() => {});
+        if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby');
     }
+
+    const pos = calculateInputPos(e);
 
     if (currentState === "MAIN_MENU") {
         if (checkCollision(pos, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
@@ -479,16 +464,13 @@ function handleInputDown(e) {
 }
 
 function handleInputMove(e) {
+    if (!dragSubject) return;
     const pos = calculateInputPos(e);
-    lastInputPos = pos;
-    if (dragSubject && dragSubject.isBeingDragged) {
-        dragSubject.x = pos.x - dragSubject.w / 2;
-        dragSubject.y = pos.y - dragSubject.h / 2;
-    }
+    dragSubject.x = pos.x - dragSubject.w / 2;
+    dragSubject.y = pos.y - dragSubject.h / 2;
 }
 
 function handleInputUp(e) {
-    // Posisi saat jari diangkat/mouse dilepas
     const pos = calculateInputPos(e);
     
     if (currentHoverButton) {
@@ -529,7 +511,6 @@ function handleInputUp(e) {
     currentHoverButton = null;
 }
 
-// Event Listeners Hybrid (Mouse & Touch)
 canvas.addEventListener('mousedown', handleInputDown);
 window.addEventListener('mousemove', handleInputMove);
 window.addEventListener('mouseup', handleInputUp);
@@ -581,7 +562,7 @@ function resourceLoaded() {
         setTimeout(() => {
             currentState = "MAIN_MENU";
             handleBGM('lobby');
-            video.play().catch(e => {});
+            video.play().catch(() => {});
         }, 500);
     }
 }
