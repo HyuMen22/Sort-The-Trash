@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sort The Trash</title>
+    <title>Sort The Trash - Mobile Fullscreen</title>
     <style>
         * {
             margin: 0;
@@ -19,9 +19,8 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            /* Mencegah layar goyang/scrolling di mobile */
+            position: fixed;
         }
 
         #gameContainer {
@@ -36,21 +35,11 @@
 
         canvas {
             background-color: #000;
-            width: 100%;
-            height: 100%;
-            max-width: 100vw;
-            max-height: 100vh;
+            /* Memaksa canvas mengisi layar landscape */
+            width: 100vw;
+            height: 100vh;
             object-fit: contain;
             display: block;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        @media (min-aspect-ratio: 16/9) {
-            canvas { width: auto; height: 100vh; }
-        }
-
-        @media (max-aspect-ratio: 16/9) {
-            canvas { width: 100vw; height: auto; }
         }
 
         #bgVideo {
@@ -401,12 +390,10 @@ function mainLoop() {
     requestAnimationFrame(mainLoop);
 }
 
-
 function calculateInputPos(e) {
     const rect = canvas.getBoundingClientRect();
     let clientX, clientY;
 
-    // Deteksi koordinat dari touch atau mouse secara spesifik
     if (e.touches && e.touches.length > 0) {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
@@ -428,7 +415,11 @@ function calculateInputPos(e) {
 }
 
 function handleInputDown(e) {
-    
+    // Memicu Fullscreen saat sentuhan pertama di mobile
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+
     if (currentState === "MAIN_MENU" || currentState === "LOADING") {
         video.play().catch(() => {});
         if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby');
