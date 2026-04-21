@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Sort The Trash - Mobile Fullscreen</title>
+    <title>Sort The Trash - Full Screen Mobile</title>
     <style>
         * {
             margin: 0;
@@ -19,8 +19,10 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            /* Mencegah layar goyang/scrolling di mobile */
-            position: fixed;
+            /* Memastikan container memenuhi seluruh viewport */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #gameContainer {
@@ -35,11 +37,12 @@
 
         canvas {
             background-color: #000;
-            /* Memaksa canvas mengisi layar landscape */
+            /* Perubahan utama: stretch untuk memenuhi layar tanpa sisa hitam */
             width: 100vw;
             height: 100vh;
-            object-fit: contain;
             display: block;
+            /* object-fit: fill akan memaksa gambar penuh ke ujung layar HP */
+            object-fit: fill; 
         }
 
         #bgVideo {
@@ -161,7 +164,7 @@ class SpriteItem {
 
     returnToOrigin() {
         this.x = this.initialX;
-        this.y = this.initialY;
+        this.initialY = this.initialY;
     }
 }
 
@@ -399,7 +402,6 @@ function calculateInputPos(e) {
         clientY = e.touches[0].clientY;
     } else if (e.changedTouches && e.changedTouches.length > 0) {
         clientX = e.changedTouches[0].clientX;
-        clientY = e.changedTouches[0].clientY;
     } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -415,7 +417,7 @@ function calculateInputPos(e) {
 }
 
 function handleInputDown(e) {
-    // Memicu Fullscreen saat sentuhan pertama di mobile
+    // Meminta mode Fullscreen di HP saat interaksi pertama
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
     }
