@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sort The Trash</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sort The Trash - Mobile Responsive</title>
     <style>
         * {
             margin: 0;
@@ -11,24 +11,55 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none; /* Mencegah scroll saat main game */
         }
 
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
+            background-color: #000; /* Hitam pekat untuk border saat tidak pas 16:9 */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        canvas {
+        /* Container Full Screen */
+        #gameContainer {
+            position: relative;
             width: 100vw;
             height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        canvas {
+            background-color: #000;
+            /* Menyesuaikan layar secara dinamis */
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+            object-fit: contain; /* Menjaga rasio 16:9 tetap sempurna */
             display: block;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Optimalisasi Fullscreen berdasarkan Rasio Layar */
+        @media (min-aspect-ratio: 16/9) {
+            canvas {
+                width: auto;
+                height: 100vh;
+            }
+        }
+
+        @media (max-aspect-ratio: 16/9) {
+            canvas {
+                width: 100vw;
+                height: auto;
+            }
         }
 
         #bgVideo {
@@ -38,22 +69,27 @@
 </head>
 <body>
 
-<video id="bgVideo" src="assets/bg_main_menu.mp4" loop muted playsinline></video>
-
-<canvas id="gameCanvas" width="1280" height="720"></canvas>
+<div id="gameContainer">
+    <video id="bgVideo" src="assets/bg_main_menu.mp4" loop muted playsinline></video>
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+</div>
 
 <script>
-/**
- * ============================================================================
- * JUDUL PROYEK: SORT THE TRASH (FINAL PRODUCTION CODE)
- * KOMPETISI: LINDA KBB 2026
- * DEVELOPER: DEAS ISKANDAR DINATA
- * ============================================================================
- */
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const video = document.getElementById('bgVideo');
+
+// --- VARIABEL ANIMASI FASE ---
+let phaseOverlay = {
+    active: false,
+    text: "",
+    subtext: "",
+    opacity: 0,
+    timer: 0,
+    duration: 150, 
+    scale: 0.8,
+    pendingMusic: null 
+};
 
 const assets = {
     images: {},
@@ -99,7 +135,7 @@ const IMAGE_RESOURCES = {
     "meja": "assets/meja.png",
     "cermin": "assets/hiasan_cermin.png",
     "meja_kecil": "assets/hiasan_meja_kecil.png",
-    "kasur": "assets/hiasan_kasur.png",
+    "custom_kasur": "assets/hiasan_kasur.png",
     "lukisan1": "assets/hiasan_lukisan1.png",
     "lukisan2": "assets/hiasan_lukisan2.png",
     "lukisan3": "assets/hiasan_lukisan3.png",
@@ -186,6 +222,15 @@ function handleBGM(musicKey) {
     }
 }
 
+function stopAllBGM() {
+    ['lobby', 'ingame', 'win', 'lose'].forEach(k => {
+        if (assets.sounds[k]) {
+            assets.sounds[k].pause();
+            assets.sounds[k].currentTime = 0;
+        }
+    });
+}
+
 function executeSFX(sfxKey) {
     if (assets.sounds[sfxKey]) {
         assets.sounds[sfxKey].currentTime = 0;
@@ -204,6 +249,18 @@ function setupLevel(lvlNumber) {
     video.pause();
 
     if (lvlNumber === 1) {
+        stopAllBGM(); 
+        phaseOverlay = {
+            active: true,
+            text: "Fase 1:",
+            subtext: "Awal Dari Rumah Dimulai",
+            opacity: 0,
+            timer: 0,
+            duration: 150, 
+            scale: 0.7,
+            pendingMusic: 'ingame'
+        };
+
         gameObjects.push(new SpriteItem("botol", "anorganik", 300, 510, 40, 90, true));
         gameObjects.push(new SpriteItem("pisang", "organik", 500, 550, 80, 80, true));
         gameObjects.push(new SpriteItem("baterai", "b3", 740, 590, 40, 60, true));
@@ -220,11 +277,12 @@ function setupLevel(lvlNumber) {
         gameObjects.push(new SpriteItem("pisang", "organik", 100, 630, 80, 80, true));
         gameObjects.push(new SpriteItem("botol", "anorganik", 750, 410, 40, 90, true));
         gameObjects.push(new SpriteItem("duri", "organik", 600, 580, 80, 60, true));
+        handleBGM('ingame');
     }
     else if (lvlNumber === 3) {
         gameObjects.push(new SpriteItem("cermin", "hiasan", 10, 250, 220, 450, false));
         gameObjects.push(new SpriteItem("meja_kecil", "hiasan", 290, 380, 120, 250, false));
-        gameObjects.push(new SpriteItem("kasur", "hiasan", 430, 430, 450, 220, false));
+        gameObjects.push(new SpriteItem("custom_kasur", "hiasan", 430, 430, 450, 220, false));
         gameObjects.push(new SpriteItem("lukisan2", "hiasan", 380, 320, 60, 80, false));
         gameObjects.push(new SpriteItem("lukisan3", "hiasan", 460, 320, 60, 80, false));
         gameObjects.push(new SpriteItem("lukisan4", "hiasan", 530, 320, 60, 80, false));
@@ -245,10 +303,10 @@ function setupLevel(lvlNumber) {
                 handleBGM('lose');
             }
         }, 1000);
+        handleBGM('ingame');
     }
 
     currentState = "IN_GAME";
-    handleBGM('ingame');
 }
 
 function drawButtonUI(btnId, posX, posY, width, height, assetNormal, assetHover) {
@@ -263,31 +321,19 @@ function mainLoop() {
     ctx.clearRect(0, 0, 1280, 720);
     ctx.save();
 
-    let shakeX = 0;
-    let shakeY = 0;
-    
-    // Logika Heartbeat yang diperbarui (1 detik getar, 1 detik diam)
+    let shakeX = 0, shakeY = 0;
     if (currentState === "IN_GAME" && activeLevel === 3 && gameTimer <= 15 && gameTimer > 0) {
-        heartbeatPhase += 0.05; // Mengatur kecepatan osilasi
-        
-        // Menggunakan Math.PI agar siklus 1 detik nyala (sin > 0) dan 1 detik mati (sin < 0)
-        // Kita gunakan sin(time) dimana interval 2 detik adalah satu putaran penuh
-        let cycle = Math.sin(Date.now() / 318); // 318ms * PI ≈ 1000ms (1 detik)
-        
+        let cycle = Math.sin(Date.now() / 318); 
         if (cycle > 0) {
-            // Bergetar (intensitas dikurangi menjadi maks 3 pixel agar tidak brutal)
             shakeX = (Math.random() * 6 - 3);
             shakeY = (Math.random() * 6 - 3);
         }
     }
-
-    // Shake tambahan saat salah (tetap ada agar terasa impact-nya)
     if (screenShakeCounter > 0) {
         shakeX += Math.random() * 10 - 5;
         shakeY += Math.random() * 10 - 5;
         screenShakeCounter--;
     }
-    
     ctx.translate(shakeX, shakeY);
 
     if (currentState === "MAIN_MENU") {
@@ -303,7 +349,6 @@ function mainLoop() {
         let currentBG = assets.images["bg_level1"];
         if(activeLevel === 2) currentBG = assets.images["bg_level2"];
         if(activeLevel === 3) currentBG = assets.images["bg_level3"];
-        
         if (currentBG) ctx.drawImage(currentBG, 0, 0, 1280, 720);
 
         gameObjects.forEach(obj => { if (!obj.isTrash && obj !== dragSubject) obj.render(ctx); });
@@ -325,16 +370,6 @@ function mainLoop() {
             ctx.font = "bold 40px Arial";
             ctx.fillText("WAKTU: " + gameTimer + "s", 640, 60);
             ctx.restore();
-
-            // Efek Layar Merah (mengikuti ritme getaran)
-            if (gameTimer <= 15) {
-                let cycle = Math.sin(Date.now() / 318);
-                if (cycle > 0) {
-                    // Transparansi halus (0.2) agar tidak terlalu brutal menutup pandangan
-                    ctx.fillStyle = `rgba(255, 0, 0, ${cycle * 0.2})`;
-                    ctx.fillRect(0, 0, 1280, 720);
-                }
-            }
         }
 
         if (currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
@@ -354,35 +389,77 @@ function mainLoop() {
         }
     }
     ctx.restore();
+
+    if (phaseOverlay.active) {
+        phaseOverlay.timer++;
+        if (phaseOverlay.timer < 30) { phaseOverlay.opacity += 0.035; phaseOverlay.scale += 0.003; } 
+        else if (phaseOverlay.timer > phaseOverlay.duration - 30) { phaseOverlay.opacity -= 0.035; }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, phaseOverlay.opacity));
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; ctx.fillRect(0, 0, 1280, 720);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 270, 1280, 200);
+        ctx.textAlign = "center"; ctx.translate(640, 345); ctx.scale(phaseOverlay.scale, phaseOverlay.scale);
+        ctx.font = "bold 85px 'Verdana', sans-serif"; ctx.shadowColor = "rgba(0,0,0,1)"; ctx.shadowBlur = 25;
+        ctx.fillStyle = "#FFD700"; ctx.fillText(phaseOverlay.text, 0, 0);
+        ctx.font = "bold 48px 'Arial'"; ctx.fillStyle = "#FFFFFF"; ctx.fillText(phaseOverlay.subtext, 0, 80);
+        ctx.restore();
+
+        if (phaseOverlay.timer >= phaseOverlay.duration) {
+            phaseOverlay.active = false;
+            if (phaseOverlay.pendingMusic) { handleBGM(phaseOverlay.pendingMusic); phaseOverlay.pendingMusic = null; }
+        }
+    }
     requestAnimationFrame(mainLoop);
 }
 
-function calculateMousePosition(event) {
-    const boundingBox = canvas.getBoundingClientRect();
-    const scaleFactorX = 1280 / boundingBox.width;
-    const scaleFactorY = 720 / boundingBox.height;
+// --- LOGIKA RESPONSIVE & POSISI INPUT (MOUSE/JARI) ---
+let lastInputPos = { x: 0, y: 0 };
+
+function calculateInputPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    
+    // Deteksi apakah input dari touch (Mobile) atau mouse (Desktop)
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    
+    // Skala dinamis berdasarkan ukuran tampilan canvas di layar
+    const scaleX = 1280 / rect.width;
+    const scaleY = 720 / rect.height;
+    
     return {
-        x: (event.clientX - boundingBox.left) * scaleFactorX,
-        y: (event.clientY - boundingBox.top) * scaleFactorY
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
     };
 }
 
-canvas.addEventListener('mousedown', (e) => {
-    const mouse = calculateMousePosition(e);
+function handleInputDown(e) {
+    const pos = calculateInputPos(e);
+    lastInputPos = pos; // Simpan posisi awal sentuhan
+
     if (currentState === "MAIN_MENU" || currentState === "LOADING") {
-        if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby');
-        if (video.paused) video.play().catch(err => {});
+        if (assets.sounds['lobby'] && assets.sounds['lobby'].paused && !phaseOverlay.active) handleBGM('lobby');
+        video.play().catch(e => {});
     }
 
     if (currentState === "MAIN_MENU") {
-        if (checkCollision(mouse, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
-        if (checkCollision(mouse, menuConfig.buttons.x, 430, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "levels";
-        if (checkCollision(mouse, menuConfig.buttons.x, 550, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "guide";
+        if (checkCollision(pos, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
+        if (checkCollision(pos, menuConfig.buttons.x, 430, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "levels";
+        if (checkCollision(pos, menuConfig.buttons.x, 550, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "guide";
     } 
     else if (currentState === "IN_GAME") {
         for (let i = gameObjects.length - 1; i >= 0; i--) {
             const target = gameObjects[i];
-            if (checkCollision(mouse, target.x, target.y, target.w, target.h)) {
+            if (checkCollision(pos, target.x, target.y, target.w, target.h)) {
                 dragSubject = target;
                 dragSubject.isBeingDragged = true;
                 break;
@@ -391,71 +468,89 @@ canvas.addEventListener('mousedown', (e) => {
     }
     else if (currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
         if (currentState === "SCREEN_WIN" && activeLevel < 3) {
-            if (checkCollision(mouse, 465, 290, 350, 100)) currentHoverButton = "continue";
-            if (checkCollision(mouse, 465, 405, 350, 100)) currentHoverButton = "restart";
-            if (checkCollision(mouse, 465, 520, 350, 100)) currentHoverButton = "home";
+            if (checkCollision(pos, 465, 290, 350, 100)) currentHoverButton = "continue";
+            if (checkCollision(pos, 465, 405, 350, 100)) currentHoverButton = "restart";
+            if (checkCollision(pos, 465, 520, 350, 100)) currentHoverButton = "home";
         } else {
-            if (checkCollision(mouse, 465, 320, 350, 100)) currentHoverButton = "restart";
-            if (checkCollision(mouse, 465, 435, 350, 100)) currentHoverButton = "home";
+            if (checkCollision(pos, 465, 320, 350, 100)) currentHoverButton = "restart";
+            if (checkCollision(pos, 465, 435, 350, 100)) currentHoverButton = "home";
         }
     }
-});
+}
 
-window.addEventListener('mouseup', (e) => {
-    const mouse = calculateMousePosition(e);
+function handleInputMove(e) {
+    const pos = calculateInputPos(e);
+    lastInputPos = pos;
+    if (dragSubject && dragSubject.isBeingDragged) {
+        dragSubject.x = pos.x - dragSubject.w / 2;
+        dragSubject.y = pos.y - dragSubject.h / 2;
+    }
+}
+
+function handleInputUp(e) {
+    // Posisi saat jari diangkat/mouse dilepas
+    const pos = calculateInputPos(e);
+    
     if (currentHoverButton) {
         executeSFX('click');
         if (currentHoverButton === "play") setupLevel(1);
         if (currentHoverButton === "continue") {
-            if(activeLevel === 1) setupLevel(2);
-            else if(activeLevel === 2) setupLevel(3);
+            if(activeLevel === 1) setupLevel(2); else if(activeLevel === 2) setupLevel(3);
         }
         if (currentHoverButton === "restart") setupLevel(activeLevel);
         if (currentHoverButton === "home") { 
-            clearInterval(timerInterval);
-            currentState = "MAIN_MENU"; 
-            handleBGM('lobby');
-            video.play();
+            clearInterval(timerInterval); currentState = "MAIN_MENU"; handleBGM('lobby'); video.play();
         }
     }
+
     if (dragSubject) {
-        let targetBin = BIN_DEFINITIONS.find(bin => checkCollision(mouse, bin.x, bin.y, bin.w, bin.h));
-        if (targetBin) {
-            if (dragSubject.isTrash && dragSubject.type === targetBin.type) {
-                executeSFX('trash');
-                gameObjects = gameObjects.filter(item => item !== dragSubject);
-                if (gameObjects.filter(item => item.isTrash).length === 0) {
-                    clearInterval(timerInterval);
-                    currentState = "SCREEN_WIN"; handleBGM('win');
-                }
-            } else {
-                if (dragSubject.isTrash) {
-                    playerLives--; screenShakeCounter = 15; executeSFX('click');
-                    if (playerLives <= 0) { 
-                        clearInterval(timerInterval);
-                        currentState = "SCREEN_LOSE"; 
-                        handleBGM('lose');
-                    }
-                }
-                dragSubject.returnToOrigin();
+        let targetBin = BIN_DEFINITIONS.find(bin => checkCollision(pos, bin.x, bin.y, bin.w, bin.h));
+        if (targetBin && dragSubject.isTrash && dragSubject.type === targetBin.type) {
+            executeSFX('trash');
+            gameObjects = gameObjects.filter(item => item !== dragSubject);
+            if (gameObjects.filter(item => item.isTrash).length === 0) {
+                clearInterval(timerInterval);
+                if (activeLevel === 3) {
+                    stopAllBGM();
+                    phaseOverlay = { active: true, text: "Fase 1:", subtext: "Awal Dari Rumah Selesai", opacity: 0, timer: 0, duration: 150, scale: 0.7, pendingMusic: 'win' };
+                } else { handleBGM('win'); }
+                currentState = "SCREEN_WIN"; 
             }
-        } else { dragSubject.returnToOrigin(); }
+        } else {
+            if (dragSubject.isTrash && targetBin) {
+                playerLives--; screenShakeCounter = 15; executeSFX('click');
+                if (playerLives <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); }
+            }
+            dragSubject.returnToOrigin();
+        }
         dragSubject.isBeingDragged = false;
         dragSubject = null;
     }
     currentHoverButton = null;
-});
+}
 
-canvas.addEventListener('mousemove', (e) => {
-    if (dragSubject && dragSubject.isBeingDragged) {
-        const mouse = calculateMousePosition(e);
-        dragSubject.x = mouse.x - dragSubject.w / 2;
-        dragSubject.y = mouse.y - dragSubject.h / 2;
-    }
-});
+// Event Listeners Hybrid (Mouse & Touch)
+canvas.addEventListener('mousedown', handleInputDown);
+window.addEventListener('mousemove', handleInputMove);
+window.addEventListener('mouseup', handleInputUp);
 
-function checkCollision(mouse, x, y, w, h) {
-    return mouse.x >= x && mouse.x <= x + w && mouse.y >= y && mouse.y <= y + h;
+canvas.addEventListener('touchstart', (e) => { 
+    if (e.cancelable) e.preventDefault(); 
+    handleInputDown(e); 
+}, {passive: false});
+
+canvas.addEventListener('touchmove', (e) => { 
+    if (e.cancelable) e.preventDefault(); 
+    handleInputMove(e); 
+}, {passive: false});
+
+canvas.addEventListener('touchend', (e) => { 
+    if (e.cancelable) e.preventDefault(); 
+    handleInputUp(e); 
+}, {passive: false});
+
+function checkCollision(pos, x, y, w, h) {
+    return pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h;
 }
 
 function initializeGame() {
@@ -475,9 +570,7 @@ function initializeGame() {
         const sound = new Audio();
         sound.src = AUDIO_RESOURCES[key];
         sound.load();
-        sound.oncanplaythrough = () => {
-            if (!assets.sounds[key]) { assets.sounds[key] = sound; resourceLoaded(); }
-        };
+        sound.oncanplaythrough = () => { if (!assets.sounds[key]) { assets.sounds[key] = sound; resourceLoaded(); } };
         sound.onerror = () => { resourceLoaded(); };
     });
 }
