@@ -19,7 +19,6 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            /* Memastikan container memenuhi seluruh viewport */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -37,11 +36,9 @@
 
         canvas {
             background-color: #000;
-            /* Perubahan utama: stretch untuk memenuhi layar tanpa sisa hitam */
             width: 100vw;
             height: 100vh;
             display: block;
-            /* object-fit: fill akan memaksa gambar penuh ke ujung layar HP */
             object-fit: fill; 
         }
 
@@ -84,7 +81,7 @@ const IMAGE_RESOURCES = {
     "bg_level1": "assets/bg_level1.png",
     "bg_level2": "assets/bg_level2.png",
     "bg_level3": "assets/bg_level3.png", 
-    "logo": "assets/Logo_sort_the_trash.png",
+    "logo": "assets/logo_sort_the_trash.png",
     "win_img": "assets/menang.png",
     "lose_img": "assets/game_over.png",
     "heart": "assets/hati.png",
@@ -164,7 +161,7 @@ class SpriteItem {
 
     returnToOrigin() {
         this.x = this.initialX;
-        this.initialY = this.initialY;
+        this.y = this.initialY; 
     }
 }
 
@@ -331,6 +328,13 @@ function mainLoop() {
         if(activeLevel === 3) currentBG = assets.images["bg_level3"];
         if (currentBG) ctx.drawImage(currentBG, 0, 0, 1280, 720);
 
+        // Efek Layar Merah di Level 3 saat waktu kritis
+        if (activeLevel === 3 && currentState === "IN_GAME" && gameTimer <= 15) {
+            let flashOpacity = Math.sin(Date.now() / 200) * 0.15 + 0.15;
+            ctx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`;
+            ctx.fillRect(0, 0, 1280, 720);
+        }
+
         gameObjects.forEach(obj => { if (!obj.isTrash && obj !== dragSubject) obj.render(ctx); });
         BIN_DEFINITIONS.forEach(bin => {
             const imgBin = assets.images[`bin_${bin.type}`];
@@ -402,6 +406,7 @@ function calculateInputPos(e) {
         clientY = e.touches[0].clientY;
     } else if (e.changedTouches && e.changedTouches.length > 0) {
         clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
     } else {
         clientX = e.clientX;
         clientY = e.clientY;
@@ -417,7 +422,6 @@ function calculateInputPos(e) {
 }
 
 function handleInputDown(e) {
-    // Meminta mode Fullscreen di HP saat interaksi pertama
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
     }
@@ -496,7 +500,7 @@ function handleInputUp(e) {
                 playerLives--; screenShakeCounter = 15; executeSFX('click');
                 if (playerLives <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); }
             }
-            dragSubject.returnToOrigin();
+            dragSubject.returnToOrigin(); 
         }
         dragSubject.isBeingDragged = false;
         dragSubject = null;
