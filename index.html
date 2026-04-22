@@ -59,16 +59,39 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const video = document.getElementById('bgVideo');
 
+// --- SISTEM OVERLAY & FAKTA ---
 let phaseOverlay = {
-    active: false,
-    text: "",
-    subtext: "",
-    opacity: 0,
-    timer: 0,
-    duration: 150, 
-    scale: 0.8,
-    pendingMusic: null 
+    active: false, text: "", subtext: "", opacity: 0, timer: 0, duration: 150, scale: 0.8, pendingMusic: null 
 };
+
+let factOverlay = {
+    active: false, text: "", opacity: 0, timer: 0, 
+    duration: 240, 
+    nextLevel: 1, bgSnapshot: null
+};
+
+const TRASH_FACTS = [
+    "TPA Sarimukti di Cipatat merupakan pusat pembuangan akhir utama untuk wilayah Bandung Raya.",
+    "Sampah organik yang tidak terkelola menyumbang 60% dari total volume sampah di Bandung Barat.",
+    "Mendaur ulang 1 ton kertas dapat menyelamatkan sekitar 17 pohon dewasa.",
+    "Botol plastik PET dapat didaur ulang menjadi serat kain untuk kaos atau tas.",
+    "KBB memproduksi ratusan ton sampah setiap hari; pemilahan dari rumah sangat krusial.",
+    "Minyak jelantah yang dibuang ke selokan dapat menyumbat saluran air dan mencemari tanah.",
+    "Satu sterofom butuh waktu 500 tahun hingga selamanya untuk bisa hancur secara alami.",
+    "Pupuk kompos dari sampah dapur bisa mengurangi beban TPA hingga puluhan persen.",
+    "Kaca bening memiliki nilai ekonomi tinggi jika dikumpulkan dalam keadaan bersih.",
+    "Sampah B3 seperti baterai harus dipisahkan karena mengandung merkuri yang beracun.",
+    "Program Kang Pisman (Kurangi, Pisahkan, Manfaatkan) adalah kunci keberhasilan lingkungan.",
+    "Donasi barang layak pakai adalah bentuk 'Reuse' yang membantu mengurangi limbah tekstil.",
+    "Plastik sekali pakai yang berakhir di laut dapat pecah menjadi mikroplastik yang berbahaya.",
+    "Sampah kaleng yang didaur ulang menghemat energi 95% dibandingkan membuat dari bijih besi.",
+    "Warga yang memilah sampah membantu pahlawan kebersihan (petugas) bekerja lebih aman.",
+    "Kertas koran bekas bisa diolah kembali menjadi kerajinan tangan bernilai seni tinggi.",
+    "Sampah masker medis harus digunting talinya sebelum dibuang agar tidak membahayakan hewan.",
+    "Limbah elektronik mengandung emas dan tembaga, namun sangat beracun jika dibakar.",
+    "Menanam pohon di lingkungan rumah membantu menyerap polusi dari gas metana sampah.",
+    "Pemanfaatan 'Bank Sampah' di sekolah bisa membantu siswa belajar menabung sambil menjaga bumi."
+];
 
 const assets = {
     images: {},
@@ -80,7 +103,8 @@ const assets = {
 const IMAGE_RESOURCES = {
     "bg_level1": "assets/bg_level1.png",
     "bg_level2": "assets/bg_level2.png",
-    "bg_level3": "assets/bg_level3.png", 
+    "bg_level3": "assets/bg_level3.png",
+    "bg_level4": "assets/bg_level4.png", 
     "logo": "assets/logo_sort_the_trash.png",
     "win_img": "assets/menang.png",
     "lose_img": "assets/game_over.png",
@@ -123,7 +147,20 @@ const IMAGE_RESOURCES = {
     "sisa_makanan": "assets/item_sisa_makanan.png",
     "plastik": "assets/item_plastik.png",
     "obat_nyamuk": "assets/item_obat_nyamuk.png",
-    "kabel": "assets/item_kabel.png"
+    "kabel": "assets/item_kabel.png",
+    "kertas": "assets/item_kertas_print.png",
+    "bangkai": "assets/item_bangkai_hewan.png",
+    "gelas_plastik": "assets/item_gelas_plastik.png",
+    "styrofoam": "assets/item_styrofoam.png",
+    "tinta": "assets/item_tinta_printer.png",
+    "kaca": "assets/item_pecahan_kaca.png",
+    "oli": "assets/item_oli_bekas.png",
+    "motor": "assets/hiasan_motor.png",
+    "ban": "assets/hiasan_ban_baru.png",
+    "wadah_mbg": "assets/hiasan_wadah_mbg.png",
+    "siswa1": "assets/hiasan_siswa1.png",
+    "siswa2": "assets/hiasan_siswa2.png",
+    "siswa3": "assets/hiasan_siswa3.png"
 };
 
 const AUDIO_RESOURCES = {
@@ -137,36 +174,20 @@ const AUDIO_RESOURCES = {
 
 class SpriteItem {
     constructor(assetId, trashType, xPos, yPos, width, height, canBeThrown = true) {
-        this.id = assetId;
-        this.type = trashType;
-        this.x = xPos;
-        this.y = yPos;
-        this.w = width;
-        this.h = height;
-        this.initialX = xPos;
-        this.initialY = yPos;
-        this.isTrash = canBeThrown;
-        this.isBeingDragged = false;
+        this.id = assetId; this.type = trashType; this.x = xPos; this.y = yPos;
+        this.w = width; this.h = height; this.initialX = xPos; this.initialY = yPos;
+        this.isTrash = canBeThrown; this.isBeingDragged = false;
     }
-
     render(renderingContext) {
         const imageRef = assets.images[this.id];
-        if (imageRef && imageRef.complete) {
-            renderingContext.drawImage(imageRef, this.x, this.y, this.w, this.h);
-        } else {
-            renderingContext.fillStyle = this.isTrash ? "#e67e22" : "#3498db";
-            renderingContext.fillRect(this.x, this.y, this.w, this.h);
-        }
+        if (imageRef && imageRef.complete) { renderingContext.drawImage(imageRef, this.x, this.y, this.w, this.h); } 
+        else { renderingContext.fillStyle = this.isTrash ? "#e67e22" : "#3498db"; renderingContext.fillRect(this.x, this.y, this.w, this.h); }
     }
-
-    returnToOrigin() {
-        this.x = this.initialX;
-        this.y = this.initialY; 
-    }
+    returnToOrigin() { this.x = this.initialX; this.y = this.initialY; }
 }
 
 let currentState = "INIT";
-let activeLevel = 1;
+let activeLevel = 0; 
 let playerLives = 3;
 let dragSubject = null;
 let currentHoverButton = null;
@@ -188,56 +209,47 @@ const BIN_DEFINITIONS = [
 
 function handleBGM(musicKey) {
     const listBGM = ['lobby', 'ingame', 'win', 'lose'];
-    listBGM.forEach(k => {
-        if (assets.sounds[k]) {
-            assets.sounds[k].pause();
-            assets.sounds[k].currentTime = 0;
-        }
-    });
-    if (assets.sounds[musicKey]) {
-        assets.sounds[musicKey].loop = true;
-        assets.sounds[musicKey].play().catch(e => {});
-    }
+    listBGM.forEach(k => { if (assets.sounds[k]) { assets.sounds[k].pause(); assets.sounds[k].currentTime = 0; } });
+    if (assets.sounds[musicKey]) { assets.sounds[musicKey].loop = true; assets.sounds[musicKey].play().catch(e => {}); }
 }
 
-function stopAllBGM() {
-    ['lobby', 'ingame', 'win', 'lose'].forEach(k => {
-        if (assets.sounds[k]) {
-            assets.sounds[k].pause();
-            assets.sounds[k].currentTime = 0;
-        }
-    });
-}
-
-function executeSFX(sfxKey) {
-    if (assets.sounds[sfxKey]) {
-        assets.sounds[sfxKey].currentTime = 0;
-        assets.sounds[sfxKey].play().catch(e => {});
-    }
-}
+function stopAllBGM() { ['lobby', 'ingame', 'win', 'lose'].forEach(k => { if (assets.sounds[k]) { assets.sounds[k].pause(); assets.sounds[k].currentTime = 0; } }); }
+function executeSFX(sfxKey) { if (assets.sounds[sfxKey]) { assets.sounds[sfxKey].currentTime = 0; assets.sounds[sfxKey].play().catch(e => {}); } }
 
 function setupLevel(lvlNumber) {
+    if (lvlNumber !== activeLevel) {
+        factOverlay.active = true;
+        factOverlay.timer = 0;
+        factOverlay.opacity = 0;
+        factOverlay.nextLevel = lvlNumber;
+        factOverlay.text = TRASH_FACTS[Math.floor(Math.random() * TRASH_FACTS.length)];
+        factOverlay.bgSnapshot = assets.images[`bg_level${activeLevel}`] || assets.images["bg_level1"];
+        currentState = "FACT_LOADING";
+        return; 
+    }
+    actualStartLevel(lvlNumber);
+}
+
+function actualStartLevel(lvlNumber) {
     activeLevel = lvlNumber;
-    playerLives = 3;
+    playerLives = (lvlNumber === 4) ? 2 : 3;
     gameObjects = [];
     dragSubject = null;
     clearInterval(timerInterval);
-    gameTimer = (lvlNumber === 3) ? 80 : 90;
+
+    if (lvlNumber === 4) {
+        gameTimer = 60; 
+    } else if (lvlNumber === 3) {
+        gameTimer = 80;
+    } else {
+        gameTimer = 90;
+    }
+
     video.pause();
 
     if (lvlNumber === 1) {
         stopAllBGM(); 
-        phaseOverlay = {
-            active: true,
-            text: "Fase 1:",
-            subtext: "Awal Dari Rumah Dimulai",
-            opacity: 0,
-            timer: 0,
-            duration: 150, 
-            scale: 0.7,
-            pendingMusic: 'ingame'
-        };
-
+        phaseOverlay = { active: true, text: "Fase 1:", subtext: "Awal Dari Rumah Dimulai", opacity: 0, timer: 0, duration: 150, scale: 0.7, pendingMusic: 'ingame' };
         gameObjects.push(new SpriteItem("botol", "anorganik", 300, 510, 40, 90, true));
         gameObjects.push(new SpriteItem("pisang", "organik", 500, 550, 80, 80, true));
         gameObjects.push(new SpriteItem("baterai", "b3", 740, 590, 40, 60, true));
@@ -264,34 +276,95 @@ function setupLevel(lvlNumber) {
         gameObjects.push(new SpriteItem("lukisan3", "hiasan", 460, 320, 60, 80, false));
         gameObjects.push(new SpriteItem("lukisan4", "hiasan", 530, 320, 60, 80, false));
         gameObjects.push(new SpriteItem("lukisan1", "hiasan", 1100, 250, 120, 150, false));
-
         gameObjects.push(new SpriteItem("tisu", "organik", 680, 480, 50, 40, true));
         gameObjects.push(new SpriteItem("sisa_makanan", "organik", 600, 490, 90, 50, true));
         gameObjects.push(new SpriteItem("plastik", "anorganik", 680, 620, 80, 90, true));
         gameObjects.push(new SpriteItem("kaleng", "anorganik",240, 560, 50, 70, true));
         gameObjects.push(new SpriteItem("obat_nyamuk", "b3", 950, 380, 28, 82, true));
         gameObjects.push(new SpriteItem("kabel", "b3", 150, 650, 100, 50, true));
-
-        timerInterval = setInterval(() => {
-            gameTimer--;
-            if (gameTimer <= 0) {
-                clearInterval(timerInterval);
-                currentState = "SCREEN_LOSE";
-                handleBGM('lose');
-            }
-        }, 1000);
+        timerInterval = setInterval(() => { gameTimer--; if (gameTimer <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); } }, 1000);
         handleBGM('ingame');
     }
-
+    else if (lvlNumber === 4) {
+        stopAllBGM();
+        phaseOverlay = { active: true, text: "Fase 2:", subtext: "Seragam dan Buku", opacity: 0, timer: 0, duration: 150, scale: 0.7, pendingMusic: 'ingame' };
+        gameObjects.push(new SpriteItem("motor", "hiasan", 10, 430, 190, 130, false));
+        gameObjects.push(new SpriteItem("ban", "hiasan", 320, 600, 90, 90, false));
+        gameObjects.push(new SpriteItem("wadah_mbg", "hiasan", 755, 580, 80, 60, false));
+        gameObjects.push(new SpriteItem("siswa1", "hiasan", 100, 480, 80, 200, false));
+        gameObjects.push(new SpriteItem("siswa2", "hiasan", 750, 330, 80, 200, false));
+        gameObjects.push(new SpriteItem("siswa3", "hiasan", 850, 315, 80, 200, false));
+        gameObjects.push(new SpriteItem("sisa_makanan", "organik", 755, 150, 80, 45, true));
+        gameObjects.push(new SpriteItem("kertas", "organik", 300, 520, 40, 40, true));
+        gameObjects.push(new SpriteItem("bangkai", "organik", 150, 310, 70, 30, true));
+        gameObjects.push(new SpriteItem("plastik", "anorganik", 50, 550, 70, 80, true));
+        gameObjects.push(new SpriteItem("gelas_plastik", "anorganik", 400, 500, 40, 65, true));
+        gameObjects.push(new SpriteItem("styrofoam", "anorganik", 7, 200, 90, 50, true));
+        gameObjects.push(new SpriteItem("tinta", "b3", 210, 440, 15, 45, true));
+        gameObjects.push(new SpriteItem("kaca", "b3", 560, 610, 65, 65, true));
+        gameObjects.push(new SpriteItem("oli", "b3", 735, 510, 35, 65, true));
+        timerInterval = setInterval(() => { gameTimer--; if (gameTimer <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); } }, 1000);
+        handleBGM('ingame');
+    }
     currentState = "IN_GAME";
 }
 
 function drawButtonUI(btnId, posX, posY, width, height, assetNormal, assetHover) {
     const isHovered = (currentHoverButton === btnId);
     const targetImage = isHovered ? assets.images[assetHover] : assets.images[assetNormal];
-    if (targetImage && targetImage.complete) {
-        ctx.drawImage(targetImage, posX, posY, width, height);
+    if (targetImage && targetImage.complete) { ctx.drawImage(targetImage, posX, posY, width, height); }
+}
+
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+    let words = text.split(' '); let line = '';
+    for(let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' '; let metrics = context.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) { context.fillText(line, x, y); line = words[n] + ' '; y += lineHeight; } else { line = testLine; }
     }
+    context.fillText(line, x, y);
+}
+
+function drawTrashStats() {
+    const counts = { organik: 0, anorganik: 0, b3: 0 };
+    gameObjects.forEach(obj => {
+        if (obj.isTrash && counts.hasOwnProperty(obj.type)) counts[obj.type]++;
+    });
+
+    const startX = 30;
+    const startY = 25; 
+    const padding = 12;
+    const boxW = 75;
+    const boxH = 60;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.beginPath();
+    ctx.roundRect(startX - 10, startY - 10, (boxW * 3) + (padding * 2) + 20, boxH + 20, 15);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    const drawStatBox = (x, count, color) => {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        ctx.beginPath();
+        ctx.roundRect(x, startY, boxW, boxH, 10);
+        ctx.fill();
+        
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "bold 28px Arial";
+        ctx.fillText(count, x + (boxW / 2), startY + 40);
+        ctx.restore();
+    };
+
+    drawStatBox(startX, counts.organik, "#27ae60");
+    drawStatBox(startX + boxW + padding, counts.anorganik, "#2980b9");
+    drawStatBox(startX + (boxW + padding) * 2, counts.b3, "#e67e22");
 }
 
 function mainLoop() {
@@ -299,70 +372,53 @@ function mainLoop() {
     ctx.save();
 
     let shakeX = 0, shakeY = 0;
-    if (currentState === "IN_GAME" && activeLevel === 3 && gameTimer <= 15 && gameTimer > 0) {
-        let cycle = Math.sin(Date.now() / 318); 
-        if (cycle > 0) {
-            shakeX = (Math.random() * 6 - 3);
-            shakeY = (Math.random() * 6 - 3);
-        }
+    if (currentState === "IN_GAME" && activeLevel >= 3 && gameTimer <= 15 && gameTimer > 0) {
+        let cycle = Math.sin(Date.now() / 318); if (cycle > 0) { shakeX = (Math.random() * 6 - 3); shakeY = (Math.random() * 6 - 3); }
     }
-    if (screenShakeCounter > 0) {
-        shakeX += Math.random() * 10 - 5;
-        shakeY += Math.random() * 10 - 5;
-        screenShakeCounter--;
-    }
+    if (screenShakeCounter > 0) { shakeX += Math.random() * 10 - 5; shakeY += Math.random() * 10 - 5; screenShakeCounter--; }
     ctx.translate(shakeX, shakeY);
 
     if (currentState === "MAIN_MENU") {
         ctx.drawImage(video, 0, 0, 1280, 720);
-        if (assets.images["logo"]) {
-            ctx.drawImage(assets.images["logo"], menuConfig.logo.x, menuConfig.logo.y, menuConfig.logo.w, menuConfig.logo.h);
-        }
+        if (assets.images["logo"]) ctx.drawImage(assets.images["logo"], menuConfig.logo.x, menuConfig.logo.y, menuConfig.logo.w, menuConfig.logo.h);
         drawButtonUI("play", menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h, "btn_play", "btn_play_h");
         drawButtonUI("levels", menuConfig.buttons.x, 430, menuConfig.buttons.w, menuConfig.buttons.h, "btn_levels", "btn_levels_h");
         drawButtonUI("guide", menuConfig.buttons.x, 550, menuConfig.buttons.w, menuConfig.buttons.h, "btn_guide", "btn_guide_h");
     } 
     else if (currentState === "IN_GAME" || currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
-        let currentBG = assets.images["bg_level1"];
-        if(activeLevel === 2) currentBG = assets.images["bg_level2"];
-        if(activeLevel === 3) currentBG = assets.images["bg_level3"];
+        let currentBG = assets.images[`bg_level${activeLevel}`];
         if (currentBG) ctx.drawImage(currentBG, 0, 0, 1280, 720);
 
-        // Efek Layar Merah di Level 3 saat waktu kritis
-        if (activeLevel === 3 && currentState === "IN_GAME" && gameTimer <= 15) {
-            let flashOpacity = Math.sin(Date.now() / 200) * 0.15 + 0.15;
-            ctx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`;
-            ctx.fillRect(0, 0, 1280, 720);
-        }
-
-        gameObjects.forEach(obj => { if (!obj.isTrash && obj !== dragSubject) obj.render(ctx); });
-        BIN_DEFINITIONS.forEach(bin => {
-            const imgBin = assets.images[`bin_${bin.type}`];
-            if (imgBin) ctx.drawImage(imgBin, bin.x, bin.y, bin.w, bin.h);
-        });
-        gameObjects.forEach(obj => { if (obj.isTrash && obj !== dragSubject) obj.render(ctx); });
-        if (dragSubject) dragSubject.render(ctx);
-
-        for (let i = 0; i < playerLives; i++) {
-            if (assets.images["heart"]) ctx.drawImage(assets.images["heart"], 1120 + (i * 45), 30, 40, 40);
-        }
-
-        if (activeLevel === 3 && currentState === "IN_GAME") {
+        if (currentState === "IN_GAME") {
+            drawTrashStats();
             ctx.save();
-            ctx.textAlign = "center";
-            ctx.fillStyle = gameTimer <= 15 ? "#ff3333" : "white";
-            ctx.font = "bold 40px Arial";
-            ctx.fillText("WAKTU: " + gameTimer + "s", 640, 60);
+            ctx.textAlign = "left";
+            ctx.font = "bold 30px Arial";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = "#FFD700"; 
+            ctx.fillText("LEVEL: " + activeLevel, 30, 135); 
             ctx.restore();
         }
 
+        if (activeLevel >= 3 && currentState === "IN_GAME" && gameTimer <= 15) {
+            let flashOpacity = Math.sin(Date.now() / 200) * 0.15 + 0.15;
+            ctx.fillStyle = `rgba(255, 0, 0, ${flashOpacity})`; ctx.fillRect(0, 0, 1280, 720);
+        }
+        gameObjects.forEach(obj => { if (!obj.isTrash && obj !== dragSubject) obj.render(ctx); });
+        BIN_DEFINITIONS.forEach(bin => { const imgBin = assets.images[`bin_${bin.type}`]; if (imgBin) ctx.drawImage(imgBin, bin.x, bin.y, bin.w, bin.h); });
+        gameObjects.forEach(obj => { if (obj.isTrash && obj !== dragSubject) obj.render(ctx); });
+        if (dragSubject) dragSubject.render(ctx);
+        for (let i = 0; i < playerLives; i++) { if (assets.images["heart"]) ctx.drawImage(assets.images["heart"], 1120 + (i * 45), 30, 40, 40); }
+        if (activeLevel >= 3 && currentState === "IN_GAME") {
+            ctx.save(); ctx.textAlign = "center"; ctx.fillStyle = gameTimer <= 15 ? "#ff3333" : "white";
+            ctx.font = "bold 40px Arial"; ctx.fillText("WAKTU: " + gameTimer + "s", 640, 60); ctx.restore();
+        }
         if (currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-            ctx.fillRect(0, 0, 1280, 720);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(0, 0, 1280, 720);
             const resultHeader = (currentState === "SCREEN_WIN") ? assets.images["win_img"] : assets.images["lose_img"];
             if (resultHeader) ctx.drawImage(resultHeader, 415, 60, 450, 210);
-
-            if (currentState === "SCREEN_WIN" && activeLevel < 3) {
+            if (currentState === "SCREEN_WIN" && activeLevel < 4) {
                 drawButtonUI("continue", 465, 290, 350, 100, "btn_continue", "btn_continue_h");
                 drawButtonUI("restart", 465, 405, 350, 100, "btn_restart", "btn_restart_h");
                 drawButtonUI("home", 465, 520, 350, 100, "btn_home", "btn_home_h");
@@ -374,135 +430,117 @@ function mainLoop() {
     }
     ctx.restore();
 
+    if (currentState === "FACT_LOADING") {
+        factOverlay.timer++;
+        if (factOverlay.timer < 30) factOverlay.opacity += 0.035;
+        else if (factOverlay.timer > factOverlay.duration - 30) factOverlay.opacity -= 0.035;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, factOverlay.opacity));
+        if (factOverlay.bgSnapshot) { ctx.filter = "blur(12px) brightness(0.4)"; ctx.drawImage(factOverlay.bgSnapshot, 0, 0, 1280, 720); ctx.filter = "none"; }
+        if (assets.images["logo"]) ctx.drawImage(assets.images["logo"], 490, 60, 300, 140);
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.beginPath(); ctx.roundRect(240, 280, 800, 280, 30); ctx.fill();
+        ctx.strokeStyle = "#FFD700"; ctx.lineWidth = 4; ctx.stroke();
+
+        ctx.textAlign = "center"; ctx.fillStyle = "#FFD700"; ctx.font = "bold 38px Arial"; ctx.fillText("TAHUKAH KAMU?", 640, 350);
+        ctx.fillStyle = "white"; ctx.font = "italic 30px Verdana"; wrapText(ctx, factOverlay.text, 640, 410, 720, 40);
+
+        ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fillRect(440, 520, 400, 12);
+        ctx.fillStyle = "#FFD700"; let progress = (factOverlay.timer / factOverlay.duration) * 400; ctx.fillRect(440, 520, progress, 12);
+        ctx.restore();
+
+        if (factOverlay.timer >= factOverlay.duration) { factOverlay.active = false; actualStartLevel(factOverlay.nextLevel); }
+    }
+
     if (phaseOverlay.active) {
         phaseOverlay.timer++;
         if (phaseOverlay.timer < 30) { phaseOverlay.opacity += 0.035; phaseOverlay.scale += 0.003; } 
         else if (phaseOverlay.timer > phaseOverlay.duration - 30) { phaseOverlay.opacity -= 0.035; }
-
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, Math.min(1, phaseOverlay.opacity));
+        ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, phaseOverlay.opacity));
         ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; ctx.fillRect(0, 0, 1280, 720);
         ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 270, 1280, 200);
         ctx.textAlign = "center"; ctx.translate(640, 345); ctx.scale(phaseOverlay.scale, phaseOverlay.scale);
         ctx.font = "bold 85px 'Verdana', sans-serif"; ctx.shadowColor = "rgba(0,0,0,1)"; ctx.shadowBlur = 25;
         ctx.fillStyle = "#FFD700"; ctx.fillText(phaseOverlay.text, 0, 0);
-        ctx.font = "bold 48px 'Arial'"; ctx.fillStyle = "#FFFFFF"; ctx.fillText(phaseOverlay.subtext, 0, 80);
-        ctx.restore();
-
-        if (phaseOverlay.timer >= phaseOverlay.duration) {
-            phaseOverlay.active = false;
-            if (phaseOverlay.pendingMusic) { handleBGM(phaseOverlay.pendingMusic); phaseOverlay.pendingMusic = null; }
-        }
+        ctx.font = "bold 48px 'Arial'"; ctx.fillStyle = "#FFFFFF"; ctx.fillText(phaseOverlay.subtext, 0, 80); ctx.restore();
+        if (phaseOverlay.timer >= phaseOverlay.duration) { phaseOverlay.active = false; if (phaseOverlay.pendingMusic) { handleBGM(phaseOverlay.pendingMusic); phaseOverlay.pendingMusic = null; } }
     }
     requestAnimationFrame(mainLoop);
 }
 
 function calculateInputPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-
-    if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-    } else if (e.changedTouches && e.changedTouches.length > 0) {
-        clientX = e.changedTouches[0].clientX;
-        clientY = e.changedTouches[0].clientY;
-    } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-    }
-
-    const scaleX = 1280 / rect.width;
-    const scaleY = 720 / rect.height;
-
-    return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
-    };
+    const rect = canvas.getBoundingClientRect(); let clientX, clientY;
+    if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+    else if (e.changedTouches && e.changedTouches.length > 0) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
+    else { clientX = e.clientX; clientY = e.clientY; }
+    const scaleX = 1280 / rect.width; const scaleY = 720 / rect.height; return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
 }
 
 function handleInputDown(e) {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-    }
-
-    if (currentState === "MAIN_MENU" || currentState === "LOADING") {
-        video.play().catch(() => {});
-        if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby');
-    }
-
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(() => {}); }
+    if (currentState === "MAIN_MENU" || currentState === "LOADING") { video.play().catch(() => {}); if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby'); }
     const pos = calculateInputPos(e);
-
     if (currentState === "MAIN_MENU") {
         if (checkCollision(pos, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
         if (checkCollision(pos, menuConfig.buttons.x, 430, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "levels";
         if (checkCollision(pos, menuConfig.buttons.x, 550, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "guide";
     } 
     else if (currentState === "IN_GAME") {
-        for (let i = gameObjects.length - 1; i >= 0; i--) {
-            const target = gameObjects[i];
-            if (checkCollision(pos, target.x, target.y, target.w, target.h)) {
-                dragSubject = target;
-                dragSubject.isBeingDragged = true;
-                break;
-            }
-        }
+        for (let i = gameObjects.length - 1; i >= 0; i--) { const target = gameObjects[i]; if (checkCollision(pos, target.x, target.y, target.w, target.h)) { dragSubject = target; dragSubject.isBeingDragged = true; break; } }
     }
     else if (currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
-        if (currentState === "SCREEN_WIN" && activeLevel < 3) {
+        if (currentState === "SCREEN_WIN" && activeLevel < 4) {
             if (checkCollision(pos, 465, 290, 350, 100)) currentHoverButton = "continue";
             if (checkCollision(pos, 465, 405, 350, 100)) currentHoverButton = "restart";
             if (checkCollision(pos, 465, 520, 350, 100)) currentHoverButton = "home";
-        } else {
-            if (checkCollision(pos, 465, 320, 350, 100)) currentHoverButton = "restart";
-            if (checkCollision(pos, 465, 435, 350, 100)) currentHoverButton = "home";
-        }
+        } else { if (checkCollision(pos, 465, 320, 350, 100)) currentHoverButton = "restart"; if (checkCollision(pos, 465, 435, 350, 100)) currentHoverButton = "home"; }
     }
 }
 
-function handleInputMove(e) {
-    if (!dragSubject) return;
-    const pos = calculateInputPos(e);
-    dragSubject.x = pos.x - dragSubject.w / 2;
-    dragSubject.y = pos.y - dragSubject.h / 2;
-}
+function handleInputMove(e) { if (!dragSubject) return; const pos = calculateInputPos(e); dragSubject.x = pos.x - dragSubject.w / 2; dragSubject.y = pos.y - dragSubject.h / 2; }
 
 function handleInputUp(e) {
     const pos = calculateInputPos(e);
-    
     if (currentHoverButton) {
         executeSFX('click');
         if (currentHoverButton === "play") setupLevel(1);
-        if (currentHoverButton === "continue") {
-            if(activeLevel === 1) setupLevel(2); else if(activeLevel === 2) setupLevel(3);
-        }
-        if (currentHoverButton === "restart") setupLevel(activeLevel);
-        if (currentHoverButton === "home") { 
-            clearInterval(timerInterval); currentState = "MAIN_MENU"; handleBGM('lobby'); video.play();
-        }
+        if (currentHoverButton === "continue") { if(activeLevel === 1) setupLevel(2); else if(activeLevel === 2) setupLevel(3); else if(activeLevel === 3) setupLevel(4); }
+        if (currentHoverButton === "restart") setupLevel(activeLevel); 
+        if (currentHoverButton === "home") { clearInterval(timerInterval); activeLevel = 0; currentState = "MAIN_MENU"; handleBGM('lobby'); video.play(); }
     }
-
     if (dragSubject) {
         let targetBin = BIN_DEFINITIONS.find(bin => checkCollision(pos, bin.x, bin.y, bin.w, bin.h));
-        if (targetBin && dragSubject.isTrash && dragSubject.type === targetBin.type) {
-            executeSFX('trash');
-            gameObjects = gameObjects.filter(item => item !== dragSubject);
-            if (gameObjects.filter(item => item.isTrash).length === 0) {
-                clearInterval(timerInterval);
-                if (activeLevel === 3) {
-                    stopAllBGM();
-                    phaseOverlay = { active: true, text: "Fase 1:", subtext: "Awal Dari Rumah Selesai", opacity: 0, timer: 0, duration: 150, scale: 0.7, pendingMusic: 'win' };
-                } else { handleBGM('win'); }
-                currentState = "SCREEN_WIN"; 
+        
+        // JIKA DIATAS TEMPAT SAMPAH
+        if (targetBin) {
+            // Jika dia sampah DAN jenisnya benar
+            if (dragSubject.isTrash && dragSubject.type === targetBin.type) {
+                executeSFX('trash'); 
+                gameObjects = gameObjects.filter(item => item !== dragSubject);
+                if (gameObjects.filter(item => item.isTrash).length === 0) {
+                    clearInterval(timerInterval);
+                    if (activeLevel === 3) { stopAllBGM(); phaseOverlay = { active: true, text: "Fase 1:", subtext: "Awal Dari Rumah Selesai", opacity: 0, timer: 0, duration: 150, scale: 0.7, pendingMusic: 'win' }; } 
+                    else { handleBGM('win'); }
+                    currentState = "SCREEN_WIN"; 
+                }
+            } 
+            // JIKA DIA BUKAN SAMPAH (HIASAN) ATAU JENIS SAMPAH SALAH
+            else {
+                playerLives--; 
+                screenShakeCounter = 15; 
+                executeSFX('click'); 
+                if (playerLives <= 0) { 
+                    clearInterval(timerInterval); 
+                    currentState = "SCREEN_LOSE"; 
+                    handleBGM('lose'); 
+                }
+                dragSubject.returnToOrigin(); 
             }
         } else {
-            if (dragSubject.isTrash && targetBin) {
-                playerLives--; screenShakeCounter = 15; executeSFX('click');
-                if (playerLives <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); }
-            }
             dragSubject.returnToOrigin(); 
         }
-        dragSubject.isBeingDragged = false;
+        dragSubject.isBeingDragged = false; 
         dragSubject = null;
     }
     currentHoverButton = null;
@@ -511,58 +549,20 @@ function handleInputUp(e) {
 canvas.addEventListener('mousedown', handleInputDown);
 window.addEventListener('mousemove', handleInputMove);
 window.addEventListener('mouseup', handleInputUp);
+canvas.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); handleInputDown(e); }, {passive: false});
+canvas.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); handleInputMove(e); }, {passive: false});
+canvas.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); handleInputUp(e); }, {passive: false});
 
-canvas.addEventListener('touchstart', (e) => { 
-    if (e.cancelable) e.preventDefault(); 
-    handleInputDown(e); 
-}, {passive: false});
-
-canvas.addEventListener('touchmove', (e) => { 
-    if (e.cancelable) e.preventDefault(); 
-    handleInputMove(e); 
-}, {passive: false});
-
-canvas.addEventListener('touchend', (e) => { 
-    if (e.cancelable) e.preventDefault(); 
-    handleInputUp(e); 
-}, {passive: false});
-
-function checkCollision(pos, x, y, w, h) {
-    return pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h;
-}
+function checkCollision(pos, x, y, w, h) { return pos.x >= x && pos.x <= x + w && pos.y >= y && pos.y <= y + h; }
 
 function initializeGame() {
-    currentState = "LOADING";
-    const imageKeys = Object.keys(IMAGE_RESOURCES);
-    const audioKeys = Object.keys(AUDIO_RESOURCES);
+    currentState = "LOADING"; const imageKeys = Object.keys(IMAGE_RESOURCES); const audioKeys = Object.keys(AUDIO_RESOURCES);
     assets.totalResources = imageKeys.length + audioKeys.length;
-
-    imageKeys.forEach(key => {
-        const img = new Image();
-        img.src = IMAGE_RESOURCES[key];
-        img.onload = () => { assets.images[key] = img; resourceLoaded(); };
-        img.onerror = () => { resourceLoaded(); };
-    });
-
-    audioKeys.forEach(key => {
-        const sound = new Audio();
-        sound.src = AUDIO_RESOURCES[key];
-        sound.load();
-        sound.oncanplaythrough = () => { if (!assets.sounds[key]) { assets.sounds[key] = sound; resourceLoaded(); } };
-        sound.onerror = () => { resourceLoaded(); };
-    });
+    imageKeys.forEach(key => { const img = new Image(); img.src = IMAGE_RESOURCES[key]; img.onload = () => { assets.images[key] = img; resourceLoaded(); }; img.onerror = () => { resourceLoaded(); }; });
+    audioKeys.forEach(key => { const sound = new Audio(); sound.src = AUDIO_RESOURCES[key]; sound.load(); sound.oncanplaythrough = () => { if (!assets.sounds[key]) { assets.sounds[key] = sound; resourceLoaded(); } }; sound.onerror = () => { resourceLoaded(); }; });
 }
 
-function resourceLoaded() {
-    assets.loadedCount++;
-    if (assets.loadedCount >= assets.totalResources) {
-        setTimeout(() => {
-            currentState = "MAIN_MENU";
-            handleBGM('lobby');
-            video.play().catch(() => {});
-        }, 500);
-    }
-}
+function resourceLoaded() { assets.loadedCount++; if (assets.loadedCount >= assets.totalResources) { setTimeout(() => { currentState = "MAIN_MENU"; handleBGM('lobby'); video.play().catch(() => {}); }, 500); } }
 
 initializeGame();
 mainLoop();
