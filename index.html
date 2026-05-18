@@ -158,6 +158,7 @@ const TRASH_FACTS = [
 
 const LEVEL_NAMES = { 1: "Halaman Rumah", 2: "Ruang Tamu", 3: "Kamar", 4: "Ruang Guru", 5: "Dalam Kelas", 6: "Ruang Baca" };
 
+// --- PERBAIKAN: DISPLAY NAME UNTUK SEPEDA DAN BAN TELAH DIPERBARUI ---
 const ITEM_DISPLAY_NAMES = {
     "botol": "Botol Plastik", "susu": "Botol Susu", "pisang": "Kulit Pisang", "baterai": "Baterai Bekas",
     "duri": "Duri Ikan", "kaleng": "Kaleng Minuman", "pemutih": "Botol Pemutih", "tisu": "Tisu Bekas",
@@ -166,10 +167,10 @@ const ITEM_DISPLAY_NAMES = {
     "styrofoam": "Styrofoam", "tinta": "Botol Tinta", "kaca": "Pecahan Kaca", "oli": "Botol Oli Bekas",
     "mika": "Plastik Mika", "snack": "Bungkus Snack", "cuanki": "Cuanki Busuk", "kardus": "Kardus Indomu",
     "rautan": "Sampah Rautan", "spidol": "Spidol Bocor", "lem": "Lem Fix", "pembersih": "Cairan Pembersih",
-    "sapu": "Sapu Ijuk", "bangku": "Bangku Kayu", "sepeda": "Sepeda Onthel", "kursi1": "Kursi Ruang Tamu",
+    "sapu": "Sapu Ijuk", "bangku": "Bangku Kayu", "sepeda": "sepeda ontel baru", "kursi1": "Kursi Ruang Tamu",
     "kursi2": "Kursi Santai", "meja": "Meja Kayu", "cermin": "Cermin Besar", "meja_kecil": "Meja Nakas",
     "custom_kasur": "Tempat Tidur", "lukisan1": "Lukisan Dinding", "lukisan2": "Bingkai Foto",
-    "lukisan3": "Bingkai Foto", "lukisan4": "Bingkai Foto", "motor": "Motor Matic", "ban": "Ban Motor",
+    "lukisan3": "Bingkai Foto", "lukisan4": "Bingkai Foto", "motor": "Motor Matic", "ban": "ban baru",
     "hp": "Smartphone", "cepuk": "Cepuk", "tas": "Tas Sekolah", "buku": "Buku Pelajaran",
     "poster": "Poster Evangelion", "wadah_tisu": "Kotak Tisu", "thomas": "Mainan Thomas",
     "buku_kti": "Buku KTI", "laptop": "Laptop", "kipas_angin": "Kipas Angin", "picture_frame": "Bingkai Foto",
@@ -215,7 +216,7 @@ const IMAGE_RESOURCES = {
     "tempat_tulis": "./assets/Tempat_Alat_tulis.png", "wifi": "./assets/Wifi.png", "buku_txt": "./assets/Buku_Bekas.png", 
     "bangkai_kodok": "./assets/Bangkai_Kodok.png", "sisa_popmie": "./assets/Sisa_Pop_Mie.png", "boba": "./assets/Minuman_Boba.png", 
     "pengharum": "./assets/Pengharum_ruangan.png", "foil": "./assets/Kemasan_foil.png", "sisa_cat": "./assets/Sisa_cat.png", 
-    "sanitizer": "./assets/Hand_Sanitizer.png", "mouse_rusak": "./assets/Mouse_rusak.png"
+    "sanitizer": "assets/Hand_Sanitizer.png", "mouse_rusak": "assets/Mouse_rusak.png"
 };
 
 const AUDIO_RESOURCES = {
@@ -237,7 +238,7 @@ class SpriteItem {
             const displayName = ITEM_DISPLAY_NAMES[this.id] || "Item";
             renderingContext.save();
             renderingContext.textAlign = "center";
-            renderingContext.font = "bold 26px 'Arial Black', Gadget, sans-serif";
+            renderingContext.font = "bold 26px 'Arial Black', sans-serif";
             renderingContext.shadowBlur = 15; renderingContext.shadowColor = "rgba(0, 0, 0, 1)";
             renderingContext.fillStyle = "#FFD700"; renderingContext.strokeStyle = "#000000"; renderingContext.lineWidth = 4;
             renderingContext.strokeText(displayName.toUpperCase(), this.x + this.w / 2, this.y - 20);
@@ -446,7 +447,7 @@ function mainLoop() {
         ctx.save(); ctx.font = "italic bold 45px 'Arial Black', sans-serif"; ctx.fillStyle = "#FFD700"; ctx.shadowBlur = 10; ctx.shadowColor = "black"; ctx.fillText("DAKARA TEAM", 640, 600); ctx.restore();
     }
 
-    if (currentState === "FACT_LOADING") {
+    if (factOverlay.active) {
         factOverlay.timer++; if (factOverlay.timer < 30) factOverlay.opacity += 0.035; 
         ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, factOverlay.opacity));
         if (factOverlay.bgSnapshot) { ctx.filter = "blur(12px) brightness(0.4)"; ctx.drawImage(factOverlay.bgSnapshot, 0, 0, 1280, 720); ctx.filter = "none"; }
@@ -488,7 +489,6 @@ function handleInputDown(e) {
     if (checkCollision(pos, muteBtnConfig.x, muteBtnConfig.y, muteBtnConfig.w, muteBtnConfig.h)) { toggleMute(); executeSFX('click'); return; }
     if (currentState === "MAIN_MENU" || currentState === "LOADING") { video.play().catch(() => {}); if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby'); }
     if (currentState === "MAIN_MENU") {
-        // --- PERBAIKAN DETEKSI KLIK SESUAI POSISI TOMBOL BARU ---
         if (checkCollision(pos, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
         if (checkCollision(pos, menuConfig.buttons.x, 425, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "levels";
         if (checkCollision(pos, menuConfig.buttons.x, 540, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "readme";
