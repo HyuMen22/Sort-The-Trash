@@ -91,8 +91,8 @@
         </div>
     </div>
 
-    <video id="bgVideo" src="./assets/bg_main_menu.mp4" loop muted playsinline></video>
-    <video id="transitionVideo" src="./assets/transisi_fase.mp4" playsinline></video>
+    <video id="bgVideo" src="assets/bg_main_menu.mp4" loop muted playsinline></video>
+    <video id="transitionVideo" src="assets/transisi_fase.mp4" playsinline></video>
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 </div>
 
@@ -134,7 +134,8 @@ let factOverlay = { active: false, text: "", opacity: 0, timer: 0, duration: 240
 let blackFade = { opacity: 0, target: 0, active: false, callback: null };
 
 const muteBtnConfig = { x: 30, y: 630, w: 70, h: 70 };
-const menuConfig = { logo: { x: 430, y: 50, w: 500, h: 240 }, buttons: { x: 500, w: 330, h: 85 } };
+// --- CONFIG LOGO DIUBAH AGAR LEBIH TINGGI DAN AGAK KE KIRI ---
+const menuConfig = { logo: { x: 390, y: 25, w: 500, h: 240 }, buttons: { x: 500, w: 330, h: 85 } };
 const BIN_DEFINITIONS = [ { type: "organik", x: 850, y: 480, w: 110, h: 200 }, { type: "anorganik", x: 980, y: 480, w: 110, h: 200 }, { type: "b3", x: 1110, y: 480, w: 110, h: 200 } ];
 
 const TRASH_FACTS = [
@@ -207,14 +208,14 @@ const IMAGE_RESOURCES = {
     "snack": "./assets/item_snack.png", "cuanki": "./assets/item_cuanki.png", "kardus": "./assets/item_kardus.png", 
     "rautan": "./assets/item_rautan.png", "spidol": "./assets/item_spidol.png", "lem": "./assets/item_lem.png", 
     "pembersih": "./assets/item_pembersih.png", "hp": "./assets/hiasan_hp.png", "cepuk": "./assets/hiasan_cepuk.png", 
-    "tas": "./assets/hiasan_tas.png", "buku": "./assets/hiasan_buku.png", "poster": "./assets/hiasan_poster.png", 
+    "tas": "./assets/hiasan_tas.png", "buku": "./assets/hiasan_buku.png", "poster": "assets/hiasan_poster.png", 
     "wadah_tisu": "./assets/hiasan_wadah_tisu.png", "thomas": "./assets/hiasan_thomas.png", "buku_kti": "./assets/Buku_Kti.png", 
     "laptop": "./assets/Laptop.png", "kipas_angin": "./assets/Kipas_Angin.png", "picture_frame": "./assets/picture_frame.png", 
     "alat_mengepel": "./assets/Alat_mengepel.png", "miniatur_eva": "./assets/Miniatur_Eva.png", "manga_jojo": "./assets/Manga_Jojo.png", 
     "tempat_tulis": "./assets/Tempat_Alat_tulis.png", "wifi": "./assets/Wifi.png", "buku_txt": "./assets/Buku_Bekas.png", 
     "bangkai_kodok": "./assets/Bangkai_Kodok.png", "sisa_popmie": "./assets/Sisa_Pop_Mie.png", "boba": "./assets/Minuman_Boba.png", 
     "pengharum": "./assets/Pengharum_ruangan.png", "foil": "./assets/Kemasan_foil.png", "sisa_cat": "./assets/Sisa_cat.png", 
-    "sanitizer": "assets/Hand_Sanitizer.png", "mouse_rusak": "assets/Mouse_rusak.png"
+    "sanitizer": "./assets/Hand_Sanitizer.png", "mouse_rusak": "./assets/Mouse_rusak.png"
 };
 
 const AUDIO_RESOURCES = {
@@ -397,7 +398,7 @@ function mainLoop() {
         
         const muteImg = isMuted ? assets.images["btn_unmute"] : assets.images["btn_mute"]; 
         if (muteImg && muteImg.complete) { ctx.drawImage(muteImg, muteBtnConfig.x, muteBtnConfig.y, muteBtnConfig.w, muteBtnConfig.h); }
-        ctx.save(); ctx.textAlign = "right"; ctx.font = "italic bold 32px 'Arial Black', Gadget, sans-serif"; ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0, 0, 0, 1)"; ctx.fillStyle = "#FFD700"; ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.strokeText("PLAYER: " + playerName.toUpperCase(), 1250, 50); ctx.fillText("PLAYER: " + playerName.toUpperCase(), 1250, 50); ctx.restore();
+        ctx.save(); ctx.textAlign = "right"; ctx.font = "italic bold 32px 'Arial Black', sans-serif"; ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0, 0, 0, 1)"; ctx.fillStyle = "#FFD700"; ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.strokeText("PLAYER: " + playerName.toUpperCase(), 1250, 50); ctx.fillText("PLAYER: " + playerName.toUpperCase(), 1250, 50); ctx.restore();
     } 
     else if (currentState === "IN_GAME" || currentState === "SCREEN_WIN" || currentState === "SCREEN_LOSE") {
         let currentBG = assets.images[`bg_level${activeLevel}`]; if (currentBG) ctx.drawImage(currentBG, 0, 0, 1280, 720);
@@ -487,6 +488,7 @@ function handleInputDown(e) {
     if (checkCollision(pos, muteBtnConfig.x, muteBtnConfig.y, muteBtnConfig.w, muteBtnConfig.h)) { toggleMute(); executeSFX('click'); return; }
     if (currentState === "MAIN_MENU" || currentState === "LOADING") { video.play().catch(() => {}); if (assets.sounds['lobby'] && assets.sounds['lobby'].paused) handleBGM('lobby'); }
     if (currentState === "MAIN_MENU") {
+        // --- PERBAIKAN DETEKSI KLIK SESUAI POSISI TOMBOL BARU ---
         if (checkCollision(pos, menuConfig.buttons.x, 310, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "play";
         if (checkCollision(pos, menuConfig.buttons.x, 425, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "levels";
         if (checkCollision(pos, menuConfig.buttons.x, 540, menuConfig.buttons.w, menuConfig.buttons.h)) currentHoverButton = "readme";
