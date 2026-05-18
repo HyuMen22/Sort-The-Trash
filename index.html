@@ -134,7 +134,6 @@ let factOverlay = { active: false, text: "", opacity: 0, timer: 0, duration: 240
 let blackFade = { opacity: 0, target: 0, active: false, callback: null };
 
 const muteBtnConfig = { x: 30, y: 630, w: 70, h: 70 };
-// --- CONFIG LOGO DIUBAH AGAR LEBIH TINGGI DAN AGAK KE KIRI ---
 const menuConfig = { logo: { x: 390, y: 25, w: 500, h: 240 }, buttons: { x: 500, w: 330, h: 85 } };
 const BIN_DEFINITIONS = [ { type: "organik", x: 850, y: 480, w: 110, h: 200 }, { type: "anorganik", x: 980, y: 480, w: 110, h: 200 }, { type: "b3", x: 1110, y: 480, w: 110, h: 200 } ];
 
@@ -158,7 +157,6 @@ const TRASH_FACTS = [
 
 const LEVEL_NAMES = { 1: "Halaman Rumah", 2: "Ruang Tamu", 3: "Kamar", 4: "Ruang Guru", 5: "Dalam Kelas", 6: "Ruang Baca" };
 
-// --- PERBAIKAN: DISPLAY NAME UNTUK SEPEDA DAN BAN TELAH DIPERBARUI ---
 const ITEM_DISPLAY_NAMES = {
     "botol": "Botol Plastik", "susu": "Botol Susu", "pisang": "Kulit Pisang", "baterai": "Baterai Bekas",
     "duri": "Duri Ikan", "kaleng": "Kaleng Minuman", "pemutih": "Botol Pemutih", "tisu": "Tisu Bekas",
@@ -178,7 +176,8 @@ const ITEM_DISPLAY_NAMES = {
     "tempat_tulis": "Tempat Alat Tulis", "wifi": "Router Wifi", "buku_txt": "Buku Bekas",
     "bangkai_kodok": "Bangkai Kodok", "sisa_popmie": "Sisa Pop Mie", "boba": "Gelas Boba",
     "pengharum": "Pengharum Ruangan", "foil": "Kemasan Foil", "sisa_cat": "Kaleng Sisa Cat",
-    "sanitizer": "Hand Sanitizer", "mouse_rusak": "Mouse Rusak"
+    "sanitizer": "Hand Sanitizer", "mouse_rusak": "Mouse Rusak",
+    "siswa1": "Kathan", "siswa2": "Deas", "siswa3": "Radit"
 };
 
 const assets = { images: {}, sounds: {}, totalResources: 0, loadedCount: 0 };
@@ -234,6 +233,7 @@ class SpriteItem {
         const imageRef = assets.images[this.id];
         if (imageRef && imageRef.complete) { renderingContext.drawImage(imageRef, this.x, this.y, this.w, this.h); } 
         else { renderingContext.fillStyle = this.isTrash ? "#e67e22" : "#3498db"; renderingContext.fillRect(this.x, this.y, this.w, this.h); }
+        // --- PERBAIKAN MUTLAK: Teks nama siswa kini otomatis muncul saat hiasan diklik/diseret ---
         if (this.isBeingDragged) {
             const displayName = ITEM_DISPLAY_NAMES[this.id] || "Item";
             renderingContext.save();
@@ -339,15 +339,6 @@ function actualStartLevel(lvlNumber) {
         timerInterval = setInterval(() => { gameTimer--; if (gameTimer <= 0) { clearInterval(timerInterval); currentState = "SCREEN_LOSE"; handleBGM('lose'); } }, 1000);
     }
     currentState = "IN_GAME";
-}
-
-function calculateFinalRank() {
-    let totalScoreFinal = (playerLives * 100) + (levelRetries * 100) + (gameTimer * 10);
-    finalRankData.score = totalScoreFinal;
-    finalRankData.show = true;
-    if (totalScoreFinal >= 700) { finalRankData.rankName = "Rank 1 (Ahli): KOLOT SAKTI"; finalRankData.color = "#FFD700"; finalRankData.description = "Orang tua yang sudah punya kesaktian/keahlian luar biasa."; }
-    else if (totalScoreFinal >= 400) { finalRankData.rankName = "Rank 2 (Menengah): BUDAK MATIH"; finalRankData.color = "#3498db"; finalRankData.description = "Matih artinya sakti/manjur. Anak yang sudah punya kemampuan."; }
-    else { finalRankData.rankName = "Rank 3 (Pemula): OROK DIAJAR"; finalRankData.color = "#8b4513"; finalRankData.description = "Bayi yang sedang belajar."; }
 }
 
 function drawButtonUI(btnId, posX, posY, width, height, assetNormal, assetHover, isDisabled = false) {
